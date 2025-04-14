@@ -1,205 +1,171 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Corruption de fichiers</title>
-    <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            background-color: #222;
-            color: white;
-            text-align: center;
-            padding: 50px;
-        }
-        #fileInput {
-            margin-bottom: 20px;
-        }
-        #glitchedContainer {
-            margin-top: 20px;
-        }
-        a {
-            color: #ff69b4;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>Glitch Media XD</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #111;
+      color: #fff;
+      text-align: center;
+      padding: 20px;
+    }
+    input[type=file], input[type=range] {
+      margin-bottom: 10px;
+    }
+    button {
+      padding: 10px 20px;
+      background: #f33;
+      border: none;
+      color: white;
+      cursor: pointer;
+      margin-bottom: 20px;
+    }
+    img, video, audio {
+      max-width: 300px;
+      margin: 10px;
+      border: 2px solid #fff;
+    }
+    .slider-label {
+      margin-top: 10px;
+    }
+  </style>
 </head>
 <body>
+  <h1>Glitcher une image, vidéo, son, ou fichier XD</h1>
+  <input type="file" accept="image/*,video/mp4,video/quicktime,audio/mpeg,application/zip,application/octet-stream" id="fileInput">
+  <br>
+  <label class="slider-label">Niveau de glitch : <span id="glitchLevelText">40</span></label>
+  <br>
+  <input type="range" min="1" max="1000" value="40" id="glitchLevel" oninput="updateGlitchText()">
+  <br>
+  <button onclick="glitchFile()">GLITCHER 🔧</button>
+  <div>
+    <h3>Avant</h3>
+    <div id="originalContainer"></div>
+    <h3>Après</h3>
+    <div id="glitchedContainer"></div>
+  </div>
 
-<h1>Corruption de fichiers avec glitches</h1>
-<p>Glitchons différents fichiers et obtenons des résultats buggés ! 😈</p>
-
-<input type="file" id="fileInput" multiple><br>
-<button onclick="processFiles()">Corrompre les fichiers</button>
-
-<div id="glitchedContainer"></div>
-
-<script>
-function processFiles() {
-    const files = document.getElementById('fileInput').files;
-    document.getElementById('glitchedContainer').innerHTML = '';
-
-    Array.from(files).forEach(file => {
-        glitchFile(file);
-    });
-}
-
-function glitchFile(file) {
-    const mime = file.type;
-    const type = mime.split('/')[0];
-    const format = mime.split('/')[1];
-
-    switch(type) {
-        case 'audio':
-            if (format === 'mpeg') {
-                glitchMP3(file);
-            }
-            break;
-        case 'video':
-            if (format === 'mp4' || format === 'quicktime') {
-                glitchMP4(file);
-            }
-            break;
-        case 'application':
-            if (format === 'zip') {
-                glitchZIP(file);
-            } else if (format === 'x-msdownload') {
-                glitchEXE(file);
-            }
-            break;
-        case 'text':
-            if (format === 'plain') {
-                glitchTXT(file);
-            }
-            break;
-        case 'application/json':
-            if (file.name.endsWith('.sb3')) {
-                glitchSB3(file);
-            }
-            break;
-        default:
-            alert('Format de fichier non supporté pour la corruption');
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script>
+    function updateGlitchText() {
+      const level = document.getElementById('glitchLevel').value;
+      document.getElementById('glitchLevelText').textContent = level;
     }
-}
 
-function glitchMP3(file) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const buffer = new Uint8Array(e.target.result);
-        const start = Math.floor(buffer.length * 0.2);
-        const end = Math.floor(buffer.length * 0.9);
-        for (let i = start; i < end; i++) {
-            buffer[i] = Math.floor(Math.random() * 256);  
+    function glitchFile() {
+      const fileInput = document.getElementById('fileInput');
+      const glitchAmount = parseInt(document.getElementById('glitchLevel').value);
+      const originalContainer = document.getElementById('originalContainer');
+      const glitchedContainer = document.getElementById('glitchedContainer');
+
+      if (!fileInput.files[0]) return alert("Choisis un fichier d'abord ! XD");
+
+      const file = fileInput.files[0];
+      const mime = file.type;
+      const type = mime.split('/')[0];
+      const format = mime.split('/')[1];
+
+      originalContainer.innerHTML = '';
+      glitchedContainer.innerHTML = '';
+
+      // Si c'est un fichier zip
+      if (file.name.endsWith('.zip')) {
+        handleZipFile(file);
+        return;
+      }
+
+      // Si c'est un fichier sb3
+      if (file.name.endsWith('.sb3')) {
+        handleSb3File(file);
+        return;
+      }
+
+      let originalEl = document.createElement(type === 'image' ? 'img' : type);
+      if (type !== 'image') originalEl.controls = true;
+      originalEl.src = URL.createObjectURL(file);
+      originalContainer.appendChild(originalEl);
+
+      if (type === 'audio' && format === 'mpeg') {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const buffer = new Uint8Array(e.target.result);
+          const start = Math.floor(buffer.length * 0.2);
+          const end = Math.floor(buffer.length * 0.9);
+          const safeGlitch = Math.min(glitchAmount, Math.floor((end - start) / 10));
+
+          for (let i = 0; i < safeGlitch; i++) {
+            const pos = Math.floor(Math.random() * (end - start)) + start;
+            buffer[pos] = Math.floor(Math.random() * 256);
+          }
+
+          const blob = new Blob([buffer], { type: 'audio/mpeg' });
+          const glitchedEl = document.createElement('audio');
+          glitchedEl.controls = true;
+          glitchedEl.src = URL.createObjectURL(blob);
+          glitchedContainer.appendChild(glitchedEl);
+        };
+        reader.readAsArrayBuffer(file);
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const base64 = e.target.result;
+        const parts = base64.split(',');
+        const head = parts[0];
+        let body = parts[1];
+        let bodyArray = body.split('');
+
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+
+        let start = Math.floor(body.length * 0.3);
+        let end = Math.floor(body.length * 0.7);
+        const maxSafeGlitch = Math.floor(body.length / 50);
+        const actualGlitchAmount = Math.min(glitchAmount, maxSafeGlitch);
+
+        for (let i = 0; i < actualGlitchAmount; i++) {
+          const pos = Math.floor(Math.random() * (end - start)) + start;
+          const randChar = chars.charAt(Math.floor(Math.random() * chars.length));
+          bodyArray[pos] = randChar;
         }
-        const blob = new Blob([buffer], { type: 'audio/mpeg' });
-        const audioElement = document.createElement('audio');
-        audioElement.controls = true;
-        audioElement.src = URL.createObjectURL(blob);
-        document.getElementById('glitchedContainer').appendChild(audioElement);
-    };
-    reader.readAsArrayBuffer(file);
-}
 
-function glitchMP4(file) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const buffer = new Uint8Array(e.target.result);
-        const start = Math.floor(buffer.length * 0.1);
-        const end = Math.floor(buffer.length * 0.8);
-        for (let i = start; i < end; i++) {
-            buffer[i] = Math.floor(Math.random() * 256);  
-        }
-        const blob = new Blob([buffer], { type: 'video/mp4' });
-        const videoElement = document.createElement('video');
-        videoElement.controls = true;
-        videoElement.src = URL.createObjectURL(blob);
-        document.getElementById('glitchedContainer').appendChild(videoElement);
-    };
-    reader.readAsArrayBuffer(file);
-}
+        const glitchedDataUrl = head + ',' + bodyArray.join('');
+        let glitchedEl = document.createElement(type === 'image' ? 'img' : 'video');
+        if (type !== 'image') glitchedEl.controls = true;
+        glitchedEl.src = glitchedDataUrl;
+        glitchedContainer.appendChild(glitchedEl);
+      };
 
-function glitchZIP(file) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const buffer = new Uint8Array(e.target.result);
-        const start = Math.floor(buffer.length * 0.1);
-        const end = Math.floor(buffer.length * 0.8);
-        for (let i = start; i < end; i++) {
-            buffer[i] = Math.floor(Math.random() * 256);  
-        }
-        const blob = new Blob([buffer], { type: 'application/zip' });
-        const zipElement = document.createElement('a');
-        zipElement.href = URL.createObjectURL(blob);
-        zipElement.download = 'glitched_file.zip';
-        zipElement.textContent = 'Téléchargez le fichier ZIP corrompu';
-        document.getElementById('glitchedContainer').appendChild(zipElement);
-    };
-    reader.readAsArrayBuffer(file);
-}
+      reader.readAsDataURL(file);
+    }
 
-function glitchEXE(file) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const buffer = new Uint8Array(e.target.result);
-        const start = Math.floor(buffer.length * 0.1);
-        const end = Math.floor(buffer.length * 0.5);
-        for (let i = start; i < end; i++) {
-            buffer[i] = Math.floor(Math.random() * 256);  
-        }
-        const blob = new Blob([buffer], { type: 'application/x-msdownload' });
-        const exeElement = document.createElement('a');
-        exeElement.href = URL.createObjectURL(blob);
-        exeElement.download = 'glitched_file.exe';
-        exeElement.textContent = 'Téléchargez le fichier EXE corrompu';
-        document.getElementById('glitchedContainer').appendChild(exeElement);
-    };
-    reader.readAsArrayBuffer(file);
-}
-
-function glitchTXT(file) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const text = e.target.result;
-        let glitchedText = '';
-        for (let i = 0; i < text.length; i++) {
-            if (Math.random() < 0.05) {  
-                glitchedText += String.fromCharCode(Math.floor(Math.random() * 256));
-            } else {
-                glitchedText += text[i];
+    function handleZipFile(file) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const zip = new JSZip();
+        zip.loadAsync(e.target.result).then(function(contents) {
+          const files = Object.keys(contents.files);
+          files.forEach(function(filename) {
+            if (filename.endsWith('.png') || filename.endsWith('.jpg') || filename.endsWith('.jpeg')) {
+              const imgEl = document.createElement('img');
+              zip.file(filename).async('blob').then(function(blob) {
+                imgEl.src = URL.createObjectURL(blob);
+                document.getElementById('originalContainer').appendChild(imgEl);
+              });
             }
-        }
-        const blob = new Blob([glitchedText], { type: 'text/plain' });
-        const txtElement = document.createElement('a');
-        txtElement.href = URL.createObjectURL(blob);
-        txtElement.download = 'glitched_file.txt';
-        txtElement.textContent = 'Téléchargez le fichier TXT corrompu';
-        document.getElementById('glitchedContainer').appendChild(txtElement);
-    };
-    reader.readAsText(file);
-}
+          });
+        });
+      };
+      reader.readAsArrayBuffer(file);
+    }
 
-function glitchSB3(file) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const json = JSON.parse(e.target.result);
-        if (json.targets) {
-            json.targets.forEach(target => {
-                if (target.variables) {
-                    const varName = Object.keys(target.variables)[0];
-                    target.variables[varName].value = Math.floor(Math.random() * 1000);  
-                }
-            });
-        }
-        const glitchedJson = JSON.stringify(json);
-        const blob = new Blob([glitchedJson], { type: 'application/json' });
-        const sb3Element = document.createElement('a');
-        sb3Element.href = URL.createObjectURL(blob);
-        sb3Element.download = 'glitched_file.sb3';
-        sb3Element.textContent = 'Téléchargez le projet Scratch corrompu';
-        document.getElementById('glitchedContainer').appendChild(sb3Element);
-    };
-    reader.readAsText(file);
-}
-</script>
-
+    function handleSb3File(file) {
+      // Gérer le fichier .sb3 ici (par exemple, extraire les données ou l'afficher d'une manière spécifique)
+      alert("Fichier .sb3 reçu, mais pas encore géré ! XD");
+    }
+  </script>
 </body>
 </html>
