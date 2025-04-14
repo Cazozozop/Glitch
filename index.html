@@ -88,6 +88,12 @@
       originalEl.src = URL.createObjectURL(file);
       originalContainer.appendChild(originalEl);
 
+      // Si c'est un GIF, appliquer un glitch plus limité
+      if (type === 'image' && format === 'gif') {
+        // Limiter le glitch pour les GIFs pour éviter la corruption
+        if (glitchAmount > 100) glitchAmount = 100;
+      }
+
       if (type === 'audio' && format === 'mpeg') {
         const reader = new FileReader();
         reader.onload = function(e) {
