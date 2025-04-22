@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Glitch Media XD</title>
+  <title>Glitch Video Optimisé</title>
   <style>
     body {
       font-family: sans-serif;
@@ -11,8 +11,8 @@
       text-align: center;
       padding: 20px;
     }
-    input[type=file], input[type=range] {
-      margin-bottom: 10px;
+    input[type=file], input[type=range], button {
+      margin: 10px;
     }
     button {
       padding: 10px 20px;
@@ -20,27 +20,25 @@
       border: none;
       color: white;
       cursor: pointer;
-      margin-bottom: 20px;
     }
-    img, video, audio {
+    video, img {
       max-width: 300px;
       margin: 10px;
       border: 2px solid #fff;
     }
-    .slider-label {
-      margin-top: 10px;
-    }
   </style>
 </head>
 <body>
-  <h1>Glitcher une image, vidéo, son, ou fichier XD</h1>
-  <input type="file" accept="image/*,video/mp4,video/quicktime,audio/mpeg,application/zip,application/octet-stream" id="fileInput">
+  <h1>Glitch une vidéo sans crasher ! 🔥</h1>
+
+  <input type="file" id="fileInput" accept="video/mp4,video/quicktime,image/*,audio/mpeg">
   <br>
-  <label class="slider-label">Niveau de glitch : <span id="glitchLevelText">40</span></label>
+  <label>Niveau de glitch : <span id="glitchLevelText">40</span></label><br>
+  <input type="range" id="glitchLevel" min="1" max="500" value="40" oninput="updateGlitchText()">
   <br>
-  <input type="range" min="1" max="1000" value="40" id="glitchLevel" oninput="updateGlitchText()">
-  <br>
-  <button onclick="glitchFile()">GLITCHER 🔧</button>
+  <button onclick="glitchFile()">Glitcher 🔧</button>
+  <br><br>
+
   <div>
     <h3>Avant</h3>
     <div id="originalContainer"></div>
@@ -48,129 +46,66 @@
     <div id="glitchedContainer"></div>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script>
     function updateGlitchText() {
-      const level = document.getElementById('glitchLevel').value;
-      document.getElementById('glitchLevelText').textContent = level;
+      document.getElementById('glitchLevelText').textContent = document.getElementById('glitchLevel').value;
     }
 
     function glitchFile() {
-      const fileInput = document.getElementById('fileInput');
-      const glitchAmount = parseInt(document.getElementById('glitchLevel').value);
-      const originalContainer = document.getElementById('originalContainer');
-      const glitchedContainer = document.getElementById('glitchedContainer');
+      const input = document.getElementById("fileInput");
+      const file = input.files[0];
+      const level = parseInt(document.getElementById("glitchLevel").value);
+      const originalContainer = document.getElementById("originalContainer");
+      const glitchedContainer = document.getElementById("glitchedContainer");
 
-      if (!fileInput.files[0]) return alert("Choisis un fichier d'abord ! XD");
+      if (!file) return alert("Choisis un fichier d'abord !");
 
-      const file = fileInput.files[0];
       const mime = file.type;
-      const type = mime.split('/')[0];
-      const format = mime.split('/')[1];
+      const isVideo = mime.startsWith("video/");
+      const isImage = mime.startsWith("image/");
+      const isAudio = mime.startsWith("audio/");
 
-      originalContainer.innerHTML = '';
-      glitchedContainer.innerHTML = '';
+      originalContainer.innerHTML = "";
+      glitchedContainer.innerHTML = "";
 
-      // Si c'est un fichier zip
-      if (file.name.endsWith('.zip')) {
-        handleZipFile(file);
-        return;
-      }
-
-      // Si c'est un fichier sb3
-      if (file.name.endsWith('.sb3')) {
-        handleSb3File(file);
-        return;
-      }
-
-      let originalEl = document.createElement(type === 'image' ? 'img' : type);
-      if (type !== 'image') originalEl.controls = true;
+      // Affiche original
+      const originalEl = document.createElement(isImage ? "img" : isVideo ? "video" : "audio");
+      originalEl.controls = isVideo || isAudio;
       originalEl.src = URL.createObjectURL(file);
       originalContainer.appendChild(originalEl);
 
-      // Si c'est un GIF, appliquer un glitch plus limité
-      if (type === 'image' && format === 'gif') {
-        // Limiter le glitch pour les GIFs pour éviter la corruption
-        if (glitchAmount > 100) glitchAmount = 100;
-      }
-
-      if (type === 'audio' && format === 'mpeg') {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          const buffer = new Uint8Array(e.target.result);
-          const start = Math.floor(buffer.length * 0.2);
-          const end = Math.floor(buffer.length * 0.9);
-          const safeGlitch = Math.min(glitchAmount, Math.floor((end - start) / 10));
-
-          for (let i = 0; i < safeGlitch; i++) {
-            const pos = Math.floor(Math.random() * (end - start)) + start;
-            buffer[pos] = Math.floor(Math.random() * 256);
-          }
-
-          const blob = new Blob([buffer], { type: 'audio/mpeg' });
-          const glitchedEl = document.createElement('audio');
-          glitchedEl.controls = true;
-          glitchedEl.src = URL.createObjectURL(blob);
-          glitchedContainer.appendChild(glitchedEl);
-        };
-        reader.readAsArrayBuffer(file);
-        return;
-      }
-
+      // Lis en ArrayBuffer pour éviter les DataURL énormes
       const reader = new FileReader();
-      reader.onload = function(e) {
-        const base64 = e.target.result;
-        const parts = base64.split(',');
-        const head = parts[0];
-        let body = parts[1];
-        let bodyArray = body.split('');
+      reader.onload = function (e) {
+        const buffer = new Uint8Array(e.target.result);
+        const start = Math.floor(buffer.length * 0.1);
+        const end = Math.floor(buffer.length * 0.9);
+        const safeLevel = Math.min(level, Math.floor((end - start) / 10));
 
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
-
-        let start = Math.floor(body.length * 0.3);
-        let end = Math.floor(body.length * 0.7);
-        const maxSafeGlitch = Math.floor(body.length / 50);
-        const actualGlitchAmount = Math.min(glitchAmount, maxSafeGlitch);
-
-        for (let i = 0; i < actualGlitchAmount; i++) {
+        for (let i = 0; i < safeLevel; i++) {
           const pos = Math.floor(Math.random() * (end - start)) + start;
-          const randChar = chars.charAt(Math.floor(Math.random() * chars.length));
-          bodyArray[pos] = randChar;
+          buffer[pos] = Math.floor(Math.random() * 256);
         }
 
-        const glitchedDataUrl = head + ',' + bodyArray.join('');
-        let glitchedEl = document.createElement(type === 'image' ? 'img' : 'video');
-        if (type !== 'image') glitchedEl.controls = true;
-        glitchedEl.src = glitchedDataUrl;
+        const blob = new Blob([buffer], { type: mime });
+        const glitchedURL = URL.createObjectURL(blob);
+
+        const glitchedEl = document.createElement(isImage ? "img" : isVideo ? "video" : "audio");
+        glitchedEl.controls = isVideo || isAudio;
+        glitchedEl.src = glitchedURL;
         glitchedContainer.appendChild(glitchedEl);
-      };
 
-      reader.readAsDataURL(file);
-    }
-
-    function handleZipFile(file) {
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const zip = new JSZip();
-        zip.loadAsync(e.target.result).then(function(contents) {
-          const files = Object.keys(contents.files);
-          files.forEach(function(filename) {
-            if (filename.endsWith('.png') || filename.endsWith('.jpg') || filename.endsWith('.jpeg')) {
-              const imgEl = document.createElement('img');
-              zip.file(filename).async('blob').then(function(blob) {
-                imgEl.src = URL.createObjectURL(blob);
-                document.getElementById('originalContainer').appendChild(imgEl);
-              });
-            }
-          });
-        });
+        // Ajout bouton de téléchargement
+        const downloadBtn = document.createElement("a");
+        downloadBtn.href = glitchedURL;
+        downloadBtn.download = "glitched_" + file.name;
+        downloadBtn.textContent = "⬇ Télécharger le fichier glitché";
+        downloadBtn.style.display = "inline-block";
+        downloadBtn.style.marginTop = "10px";
+        downloadBtn.style.color = "cyan";
+        glitchedContainer.appendChild(downloadBtn);
       };
       reader.readAsArrayBuffer(file);
-    }
-
-    function handleSb3File(file) {
-      // Gérer le fichier .sb3 ici (par exemple, extraire les données ou l'afficher d'une manière spécifique)
-      alert("Fichier .sb3 reçu, mais pas encore géré ! XD");
     }
   </script>
 </body>
