@@ -34,7 +34,7 @@
   <input type="file" id="fileInput" accept="video/mp4,video/quicktime,image/*,audio/mpeg">
   <br>
   <label>Niveau de glitch :</label>
-  <input type="number" id="glitchLevel" min="1" max="1000" value="40">
+  <input type="number" id="glitchLevel" min="1" max="1000000" value="40">
   <br>
   <button onclick="glitchFile()">Glitcher 🔧</button>
   <br><br>
@@ -55,8 +55,8 @@
       const glitchedContainer = document.getElementById("glitchedContainer");
 
       if (!file) return alert("Choisis un fichier d'abord !");
-      if (isNaN(level) || level < 1 || level > 100000) {
-        return alert("Le niveau de glitch doit être un nombre entre 1 et 100000.");
+      if (isNaN(level) || level < 1 || level > 1000000) {
+        return alert("Le niveau de glitch doit être un nombre entre 1 et 1000000.");
       }
 
       const mime = file.type;
@@ -81,7 +81,7 @@
 
         for (let i = 0; i < safeLevel; i++) {
           const pos = Math.floor(Math.random() * (end - start)) + start;
-          buffer[pos] = Math.floor(Math.random() * 2048);
+          buffer[pos] = Math.floor(Math.random() * 256);
         }
 
         const blob = new Blob([buffer], { type: mime });
