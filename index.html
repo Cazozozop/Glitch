@@ -81,7 +81,7 @@
 
         for (let i = 0; i < safeLevel; i++) {
           const pos = Math.floor(Math.random() * (end - start)) + start;
-          buffer[pos] = Math.floor(Math.random() * 256);
+          buffer[pos] = Math.floor(Math.random() * 2048);
         }
 
         const blob = new Blob([buffer], { type: mime });
