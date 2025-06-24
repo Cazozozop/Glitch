@@ -47,70 +47,91 @@
     <div id="glitchedContainer"></div>
   </div>
 
-  <script>
-    function glitchFile() {
-      const input = document.getElementById("fileInput");
-      const file = input.files[0];
-      const level = parseInt(document.getElementById("glitchLevel").value);
-      const originalContainer = document.getElementById("originalContainer");
-      const glitchedContainer = document.getElementById("glitchedContainer");
+<script>
+function glitchFile() {
+  const input = document.getElementById("fileInput");
+  const file = input.files[0];
+  const level = parseInt(document.getElementById("glitchLevel").value);
+  const originalContainer = document.getElementById("originalContainer");
+  const glitchedContainer = document.getElementById("glitchedContainer");
 
-      if (!file) return alert("Choisis un fichier d'abord !");
-      if (isNaN(level) || level < 1 || level > 1000000) {
-        return alert("Le niveau de glitch doit être un nombre entre 1 et 1000000.");
+  if (!file) return alert("Choisis un fichier d'abord !");
+  if (isNaN(level) || level < 1 || level > 1000000) {
+    return alert("Le niveau de glitch doit être un nombre entre 1 et 1000000.");
+  }
+
+  const mime = file.type;
+  const isVideo = mime.startsWith("video/");
+  const isImage = mime.startsWith("image/");
+  const isAudio = mime.startsWith("audio/");
+  const isPDF = mime === "application/pdf";
+
+  originalContainer.innerHTML = "";
+  glitchedContainer.innerHTML = "";
+
+  const originalEl = document.createElement(isImage ? "img" : isVideo ? "video" : isAudio ? "audio" : isPDF ? "embed" : "div");
+  if (isVideo || isAudio) originalEl.controls = true;
+  originalEl.src = URL.createObjectURL(file);
+  if (isPDF) {
+    originalEl.type = "application/pdf";
+    originalEl.width = "300";
+    originalEl.height = "400";
+  }
+  originalContainer.appendChild(originalEl);
+
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    const buffer = new Uint8Array(e.target.result);
+    const start = Math.floor(buffer.length * 0.1);
+    const end = Math.floor(buffer.length * 0.9);
+    const safeLevel = Math.min(level, Math.floor((end - start) / 10));
+
+    if (isPDF) {
+      // Glitch spécial PDF : injecter du texte visible
+      const visibleChars = "#%X@_{}💀";
+      for (let i = 0; i < safeLevel; i++) {
+        const pos = Math.floor(Math.random() * (end - start)) + start;
+        const char = visibleChars[Math.floor(Math.random() * visibleChars.length)];
+        buffer[pos] = char.charCodeAt(0);
       }
 
-      const mime = file.type;
-      const isVideo = mime.startsWith("video/");
-      const isImage = mime.startsWith("image/");
-      const isAudio = mime.startsWith("audio/");
-      const isPDF = mime === "application/pdf";
-
-      originalContainer.innerHTML = "";
-      glitchedContainer.innerHTML = "";
-
-      const originalEl = document.createElement(isImage ? "img" : isVideo ? "video" : isAudio ? "audio" : isPDF ? "embed" : "div");
-      if (isVideo || isAudio) originalEl.controls = true;
-      originalEl.src = URL.createObjectURL(file);
-      if (isPDF) originalEl.type = "application/pdf";
-      originalContainer.appendChild(originalEl);
-
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        const buffer = new Uint8Array(e.target.result);
-        const start = Math.floor(buffer.length * 0.1);
-        const end = Math.floor(buffer.length * 0.9);
-        const safeLevel = Math.min(level, Math.floor((end - start) / 10));
-
-        for (let i = 0; i < safeLevel; i++) {
-          const pos = Math.floor(Math.random() * (end - start)) + start;
-          buffer[pos] = Math.floor(Math.random() * 256);
-        }
-
-        const blob = new Blob([buffer], { type: mime });
-        const glitchedURL = URL.createObjectURL(blob);
-
-        const glitchedEl = document.createElement(isImage ? "img" : isVideo ? "video" : isAudio ? "audio" : isPDF ? "embed" : "div");
-        if (isVideo || isAudio) glitchedEl.controls = true;
-        glitchedEl.src = glitchedURL;
-        if (isPDF) {
-          glitchedEl.type = "application/pdf";
-          glitchedEl.width = "300";
-          glitchedEl.height = "400";
-        }
-        glitchedContainer.appendChild(glitchedEl);
-
-        const downloadBtn = document.createElement("a");
-        downloadBtn.href = glitchedURL;
-        downloadBtn.download = "glitched_" + file.name;
-        downloadBtn.textContent = "⬇ Télécharger le fichier glitché";
-        downloadBtn.style.display = "inline-block";
-        downloadBtn.style.marginTop = "10px";
-        downloadBtn.style.color = "cyan";
-        glitchedContainer.appendChild(downloadBtn);
-      };
-      reader.readAsArrayBuffer(file);
+      // Bonus : injecter "TCY POWA" quelque part
+      const insertText = new TextEncoder().encode("💀TCY POWA💀");
+      const insertPos = Math.floor(Math.random() * (end - insertText.length)) + start;
+      buffer.set(insertText, insertPos);
+    } else {
+      // Glitch classique pour les autres types
+      for (let i = 0; i < safeLevel; i++) {
+        const pos = Math.floor(Math.random() * (end - start)) + start;
+        buffer[pos] = Math.floor(Math.random() * 256);
+      }
     }
-  </script>
+
+    const blob = new Blob([buffer], { type: mime });
+    const glitchedURL = URL.createObjectURL(blob);
+
+    const glitchedEl = document.createElement(isImage ? "img" : isVideo ? "video" : isAudio ? "audio" : isPDF ? "embed" : "div");
+    if (isVideo || isAudio) glitchedEl.controls = true;
+    glitchedEl.src = glitchedURL;
+    if (isPDF) {
+      glitchedEl.type = "application/pdf";
+      glitchedEl.width = "300";
+      glitchedEl.height = "400";
+    }
+    glitchedContainer.appendChild(glitchedEl);
+
+    const downloadBtn = document.createElement("a");
+    downloadBtn.href = glitchedURL;
+    downloadBtn.download = "glitched_" + file.name;
+    downloadBtn.textContent = "⬇ Télécharger le fichier glitché";
+    downloadBtn.style.display = "inline-block";
+    downloadBtn.style.marginTop = "10px";
+    downloadBtn.style.color = "cyan";
+    glitchedContainer.appendChild(downloadBtn);
+  };
+  reader.readAsArrayBuffer(file);
+}
+</script>
+
 </body>
 </html>
