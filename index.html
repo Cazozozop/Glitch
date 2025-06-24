@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Glitch files online</title>
   <style>
     body {
@@ -21,7 +21,7 @@
       color: white;
       cursor: pointer;
     }
-    video, img, iframe, embed {
+    video, img, iframe, embed, canvas {
       max-width: 300px;
       margin: 10px;
       border: 2px solid #fff;
@@ -32,13 +32,13 @@
 <body>
   <h1>Glitch a file without crash!</h1>
 
-  <input type="file" id="fileInput" accept="video/mp4,video/quicktime,image/*,audio/mpeg,application/pdf">
-  <br>
+  <input type="file" id="fileInput" accept="video/mp4,video/quicktime,image/*,audio/mpeg,application/pdf" />
+  <br />
   <label>Niveau de glitch :</label>
-  <input type="number" id="glitchLevel" min="1" max="1000000" value="40">
-  <br>
+  <input type="number" id="glitchLevel" min="1" max="1000000" value="40" />
+  <br />
   <button onclick="glitchFile()">Glitcher 🔧</button>
-  <br><br>
+  <br /><br />
 
   <div>
     <h3>Avant</h3>
@@ -69,7 +69,10 @@ function glitchFile() {
   originalContainer.innerHTML = "";
   glitchedContainer.innerHTML = "";
 
-  const originalEl = document.createElement(isImage ? "img" : isVideo ? "video" : isAudio ? "audio" : isPDF ? "embed" : "div");
+  // Affiche l'original
+  const originalEl = document.createElement(
+    isImage ? "img" : isVideo ? "video" : isAudio ? "audio" : isPDF ? "embed" : "div"
+  );
   if (isVideo || isAudio) originalEl.controls = true;
   originalEl.src = URL.createObjectURL(file);
   if (isPDF) {
@@ -79,6 +82,49 @@ function glitchFile() {
   }
   originalContainer.appendChild(originalEl);
 
+  if (isImage) {
+    // Glitch visuel via canvas pour les images
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0);
+
+      let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      let data = imageData.data;
+
+      // Glitch simple : inverser couleur de pixels aléatoires
+      const safeLevel = Math.min(level, Math.floor(data.length / 40));
+      for (let i = 0; i < safeLevel * 4; i += 4) {
+        const pos = Math.floor(Math.random() * (data.length / 4)) * 4;
+        data[pos] = 255 - data[pos];       // R
+        data[pos + 1] = 255 - data[pos + 1]; // G
+        data[pos + 2] = 255 - data[pos + 2]; // B
+        // alpha inchangé (data[pos + 3])
+      }
+
+      ctx.putImageData(imageData, 0, 0);
+
+      glitchedContainer.innerHTML = "";
+      glitchedContainer.appendChild(canvas);
+
+      // Bouton téléchargement PNG
+      const downloadBtn = document.createElement("a");
+      downloadBtn.href = canvas.toDataURL("image/png");
+      downloadBtn.download = "glitched_" + file.name.replace(/\.[^/.]+$/, "") + ".png";
+      downloadBtn.textContent = "⬇ Télécharger le fichier glitché";
+      downloadBtn.style.display = "inline-block";
+      downloadBtn.style.marginTop = "10px";
+      downloadBtn.style.color = "cyan";
+      glitchedContainer.appendChild(downloadBtn);
+    };
+    img.src = URL.createObjectURL(file);
+    return; // On arrête ici pour les images (pas de glitch binaire)
+  }
+
+  // Pour PDF et autres fichiers : glitch binaire classique
   const reader = new FileReader();
   reader.onload = function (e) {
     const buffer = new Uint8Array(e.target.result);
@@ -100,7 +146,7 @@ function glitchFile() {
       const insertPos = Math.floor(Math.random() * (end - insertText.length)) + start;
       buffer.set(insertText, insertPos);
     } else {
-      // Glitch classique pour les autres types
+      // Glitch classique pour les autres types (vidéo, audio...)
       for (let i = 0; i < safeLevel; i++) {
         const pos = Math.floor(Math.random() * (end - start)) + start;
         buffer[pos] = Math.floor(Math.random() * 256);
@@ -110,7 +156,9 @@ function glitchFile() {
     const blob = new Blob([buffer], { type: mime });
     const glitchedURL = URL.createObjectURL(blob);
 
-    const glitchedEl = document.createElement(isImage ? "img" : isVideo ? "video" : isAudio ? "audio" : isPDF ? "embed" : "div");
+    const glitchedEl = document.createElement(
+      isVideo ? "video" : isAudio ? "audio" : isPDF ? "embed" : "div"
+    );
     if (isVideo || isAudio) glitchedEl.controls = true;
     glitchedEl.src = glitchedURL;
     if (isPDF) {
