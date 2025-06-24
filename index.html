@@ -141,17 +141,32 @@ function glitchFile() {
         buffer[pos] = char.charCodeAt(0);
       }
 
-      // Bonus : injecter "TCY POWA" quelque part
-      const insertText = new TextEncoder().encode("💀TCY POWA💀");
-      const insertPos = Math.floor(Math.random() * (end - insertText.length)) + start;
-      buffer.set(insertText, insertPos);
+if (isPDF) {
+  // PDF : glitch modéré + injection ASCII visibles
+  const visibleChars = "#%X@_{}💀";
+  for (let i = 0; i < safeLevel; i++) {
+    const pos = Math.floor(Math.random() * (end - start)) + start;
+    const char = visibleChars[Math.floor(Math.random() * visibleChars.length)];
+    buffer[pos] = char.charCodeAt(0);
+  }
+  const insertText = new TextEncoder().encode("💀TCY POWA💀");
+  const insertPos = Math.floor(Math.random() * (end - insertText.length)) + start;
+  buffer.set(insertText, insertPos);
+} else {
+  // Tous les autres : glitch binaire doux
+  for (let i = 0; i < safeLevel; i++) {
+    const pos = Math.floor(Math.random() * (end - start)) + start;
+    const mode = Math.random();
+    if (mode < 0.33) {
+      buffer[pos] ^= 0xFF; // inversion totale
+    } else if (mode < 0.66) {
+      buffer[pos] = buffer[pos] ^ 0x0F; // légère corruption
     } else {
-      // Glitch classique pour les autres types (vidéo, audio...)
-      for (let i = 0; i < safeLevel; i++) {
-        const pos = Math.floor(Math.random() * (end - start)) + start;
-        buffer[pos] = Math.floor(Math.random() * 256);
-      }
+      buffer[pos] = (buffer[pos] + Math.floor(Math.random() * 20) - 10) & 0xFF; // variation douce
     }
+  }
+}
+
 
     const blob = new Blob([buffer], { type: mime });
     const glitchedURL = URL.createObjectURL(blob);
