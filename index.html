@@ -69,7 +69,6 @@ function glitchFile() {
   originalContainer.innerHTML = "";
   glitchedContainer.innerHTML = "";
 
-  // Affiche l'original
   const originalEl = document.createElement(
     isImage ? "img" : isVideo ? "video" : isAudio ? "audio" : isPDF ? "embed" : "div"
   );
@@ -83,7 +82,6 @@ function glitchFile() {
   originalContainer.appendChild(originalEl);
 
   if (isImage) {
-    // Glitch visuel via canvas pour les images
     const img = new Image();
     img.onload = () => {
       const canvas = document.createElement("canvas");
@@ -94,23 +92,29 @@ function glitchFile() {
 
       let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       let data = imageData.data;
-
-      // Glitch simple : inverser couleur de pixels aléatoires
       const safeLevel = Math.min(level, Math.floor(data.length / 40));
       for (let i = 0; i < safeLevel * 4; i += 4) {
         const pos = Math.floor(Math.random() * (data.length / 4)) * 4;
-        data[pos] = 255 - data[pos];       // R
-        data[pos + 1] = 255 - data[pos + 1]; // G
-        data[pos + 2] = 255 - data[pos + 2]; // B
-        // alpha inchangé (data[pos + 3])
+        const mode = Math.random();
+        if (mode < 0.33) {
+          data[pos] ^= 0xFF;
+          data[pos + 1] ^= 0xFF;
+          data[pos + 2] ^= 0xFF;
+        } else if (mode < 0.66) {
+          data[pos] = data[pos] ^ 0x0F;
+          data[pos + 1] = data[pos + 1] ^ 0x0F;
+          data[pos + 2] = data[pos + 2] ^ 0x0F;
+        } else {
+          data[pos] = (data[pos] + Math.floor(Math.random() * 40) - 20) & 0xFF;
+          data[pos + 1] = (data[pos + 1] + Math.floor(Math.random() * 40) - 20) & 0xFF;
+          data[pos + 2] = (data[pos + 2] + Math.floor(Math.random() * 40) - 20) & 0xFF;
+        }
       }
 
       ctx.putImageData(imageData, 0, 0);
-
       glitchedContainer.innerHTML = "";
       glitchedContainer.appendChild(canvas);
 
-      // Bouton téléchargement PNG
       const downloadBtn = document.createElement("a");
       downloadBtn.href = canvas.toDataURL("image/png");
       downloadBtn.download = "glitched_" + file.name.replace(/\.[^/.]+$/, "") + ".png";
@@ -121,10 +125,9 @@ function glitchFile() {
       glitchedContainer.appendChild(downloadBtn);
     };
     img.src = URL.createObjectURL(file);
-    return; // On arrête ici pour les images (pas de glitch binaire)
+    return;
   }
 
-  // Pour PDF et autres fichiers : glitch binaire classique
   const reader = new FileReader();
   reader.onload = function (e) {
     const buffer = new Uint8Array(e.target.result);
@@ -133,40 +136,28 @@ function glitchFile() {
     const safeLevel = Math.min(level, Math.floor((end - start) / 10));
 
     if (isPDF) {
-      // Glitch spécial PDF : injecter du texte visible
       const visibleChars = "#%X@_{}💀";
       for (let i = 0; i < safeLevel; i++) {
         const pos = Math.floor(Math.random() * (end - start)) + start;
         const char = visibleChars[Math.floor(Math.random() * visibleChars.length)];
         buffer[pos] = char.charCodeAt(0);
       }
-
-if (isPDF) {
-  // PDF : glitch modéré + injection ASCII visibles
-  const visibleChars = "#%X@_{}💀";
-  for (let i = 0; i < safeLevel; i++) {
-    const pos = Math.floor(Math.random() * (end - start)) + start;
-    const char = visibleChars[Math.floor(Math.random() * visibleChars.length)];
-    buffer[pos] = char.charCodeAt(0);
-  }
-  const insertText = new TextEncoder().encode("💀TCY POWA💀");
-  const insertPos = Math.floor(Math.random() * (end - insertText.length)) + start;
-  buffer.set(insertText, insertPos);
-} else {
-  // Tous les autres : glitch binaire doux
-  for (let i = 0; i < safeLevel; i++) {
-    const pos = Math.floor(Math.random() * (end - start)) + start;
-    const mode = Math.random();
-    if (mode < 0.33) {
-      buffer[pos] ^= 0xFF; // inversion totale
-    } else if (mode < 0.66) {
-      buffer[pos] = buffer[pos] ^ 0x0F; // légère corruption
+      const insertText = new TextEncoder().encode("💀TCY POWA💀");
+      const insertPos = Math.floor(Math.random() * (end - insertText.length)) + start;
+      buffer.set(insertText, insertPos);
     } else {
-      buffer[pos] = (buffer[pos] + Math.floor(Math.random() * 20) - 10) & 0xFF; // variation douce
+      for (let i = 0; i < safeLevel; i++) {
+        const pos = Math.floor(Math.random() * (end - start)) + start;
+        const mode = Math.random();
+        if (mode < 0.33) {
+          buffer[pos] ^= 0xFF;
+        } else if (mode < 0.66) {
+          buffer[pos] = buffer[pos] ^ 0x0F;
+        } else {
+          buffer[pos] = (buffer[pos] + Math.floor(Math.random() * 20) - 10) & 0xFF;
+        }
+      }
     }
-  }
-}
-
 
     const blob = new Blob([buffer], { type: mime });
     const glitchedURL = URL.createObjectURL(blob);
@@ -195,6 +186,5 @@ if (isPDF) {
   reader.readAsArrayBuffer(file);
 }
 </script>
-
 </body>
 </html>
