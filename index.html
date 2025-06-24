@@ -21,17 +21,18 @@
       color: white;
       cursor: pointer;
     }
-    video, img {
+    video, img, iframe, embed {
       max-width: 300px;
       margin: 10px;
       border: 2px solid #fff;
+      height: auto;
     }
   </style>
 </head>
 <body>
   <h1>Glitch a file without crash!</h1>
 
-  <input type="file" id="fileInput" accept="video/mp4,video/quicktime,image/*,audio/mpeg">
+  <input type="file" id="fileInput" accept="video/mp4,video/quicktime,image/*,audio/mpeg,application/pdf">
   <br>
   <label>Niveau de glitch :</label>
   <input type="number" id="glitchLevel" min="1" max="1000000" value="40">
@@ -63,13 +64,15 @@
       const isVideo = mime.startsWith("video/");
       const isImage = mime.startsWith("image/");
       const isAudio = mime.startsWith("audio/");
+      const isPDF = mime === "application/pdf";
 
       originalContainer.innerHTML = "";
       glitchedContainer.innerHTML = "";
 
-      const originalEl = document.createElement(isImage ? "img" : isVideo ? "video" : "audio");
-      originalEl.controls = isVideo || isAudio;
+      const originalEl = document.createElement(isImage ? "img" : isVideo ? "video" : isAudio ? "audio" : isPDF ? "embed" : "div");
+      if (isVideo || isAudio) originalEl.controls = true;
       originalEl.src = URL.createObjectURL(file);
+      if (isPDF) originalEl.type = "application/pdf";
       originalContainer.appendChild(originalEl);
 
       const reader = new FileReader();
@@ -87,9 +90,14 @@
         const blob = new Blob([buffer], { type: mime });
         const glitchedURL = URL.createObjectURL(blob);
 
-        const glitchedEl = document.createElement(isImage ? "img" : isVideo ? "video" : "audio");
-        glitchedEl.controls = isVideo || isAudio;
+        const glitchedEl = document.createElement(isImage ? "img" : isVideo ? "video" : isAudio ? "audio" : isPDF ? "embed" : "div");
+        if (isVideo || isAudio) glitchedEl.controls = true;
         glitchedEl.src = glitchedURL;
+        if (isPDF) {
+          glitchedEl.type = "application/pdf";
+          glitchedEl.width = "300";
+          glitchedEl.height = "400";
+        }
         glitchedContainer.appendChild(glitchedEl);
 
         const downloadBtn = document.createElement("a");
